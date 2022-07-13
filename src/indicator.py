@@ -25,7 +25,7 @@ class Element_data:
         self.line = 0
 
 
-def Frame_Circulation_Indicator(Characters_elements_data, ini_flag, stop_flag):
+def frame_circulation_indicator(Characters_elements_data, ini_flag, stop_flag):
     global g_bar_num
     global g_bar_max_flag
     global g_interval_value
