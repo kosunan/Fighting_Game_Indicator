@@ -1,58 +1,47 @@
+from ctypes import windll, wintypes, byref
+import time
+import cfg_tl
+cfg = cfg_tl
 g_bar_num = 0
 g_bar_max_flag = 0
 g_interval = 0
-g_interval_value = 0
+g_interval_value = 81
 g_interval_max_flag = 0
 g_bar_range = 80
+
 g_bars_num = 10
-
-g_character_elements_bar = list(range(4))
-
-for n in range(4):
-    g_character_elements_bar[n] = list(range(10))
-
-g_characters_elements_bar = [g_character_elements_bar[0],
-                             g_character_elements_bar[1],
-                             g_character_elements_bar[2],
-                             g_character_elements_bar[3]
-                             ]
+g_bar_lists = []
+g_font_data_list = [[""] * 10 for i in range(4)]
+# 格納スペース
+g_characters_elements_bar = [[[""] * g_bar_range for i in range(10)] for j in range(4)]
 
 
-class Element_data:
-    def __init__(self):
-        self.flag = 0
-        self.num = 0
-        self.line = 0
+def frame_circulation_indicator(characters_elements, stop_flag, circulat_data):
 
-
-def frame_circulation_indicator(Characters_elements_data, ini_flag, stop_flag):
     global g_bar_num
     global g_bar_max_flag
     global g_interval_value
     global g_characters_elements_bar
+    global g_interval_max_flag
+    global g_bar_lists
+    add_flag = 0
+    p1 = characters_elements[0]
+    p2 = characters_elements[1]
 
-    bar_flag = bar_flag_detection(Characters_elements_data)
-
-    if ini_flag == 1:  # ラウンド初期化時のバー初期化
-        bar_ini()
-
-    if bar_flag == 1 and g_interval_max_flag == 1:  # インターバル経過後初期化
-        bar_ini()
-
-    if g_bar_num == g_bar_range:
-        g_bar_max_flag = 1
-        g_bar_num = 0
+    bar_flag = bar_flag_detection(p1, p2)
 
     if bar_flag == 1:
-        bar_add(Characters_elements_data, stop_flag)
+        add_flag = 1
         g_interval_value = 0
 
-    elif bar_flag == 0:
+        if g_interval_max_flag == 1:  # インターバル経過後初期化
+            circulat_data = bar_ini()
 
+    elif bar_flag == 0:
         g_interval_value += 1
 
         if g_bar_max_flag == 0:
-            interval = 80
+            interval = 60
 
         elif g_bar_max_flag == 1:
             interval = 20
@@ -61,22 +50,65 @@ def frame_circulation_indicator(Characters_elements_data, ini_flag, stop_flag):
             g_interval_max_flag = 1
 
         if g_interval_max_flag == 0:
-            bar_add(Characters_elements_data, stop_flag)
+            add_flag = 1
 
-    return g_bar_lists
+    if add_flag == 1:
+        if stop_flag == 0:
+            g_bar_num += 1
+
+            if g_bar_num == g_bar_range:
+                g_bar_num = 0
+                g_bar_max_flag = 1
+
+        bar_add(characters_elements, stop_flag)
+
+        for p_index, p in zip(g_characters_elements_bar, range(4)):
+            for line_index, line in zip(p_index, range(10)):
+                index = g_bar_num + 1
+                circulat_data[p][line] = ""
+                for nnn in range(80):
+                    if index >= 80:
+                        index = 0
+                    circulat_data[p][line] = circulat_data[p][line] + line_index[index]
+                    index += 1
+
+        return circulat_data
+
+    elif add_flag == 0:
+
+        return circulat_data
 
 
-def bar_flag_detection(Characters_elements_data):
+def bar_add(characters_elements, stop_flag):
 
-    p1_elements_data = Characters_elements_data[0]
-    p2_elements_data = Characters_elements_data[1]
+    global g_characters_elements_bar
+    global g_bar_max_flag
+    global g_font_data_list
 
-    for element_grain_data in p1_elements_data:
-        if element_grain_data.flag == 1:
+    index = 0
+    max_len = len(g_characters_elements_bar[0])
+
+    for p_index in range(4):
+        for m in range(max_len):
+            g_characters_elements_bar[p_index][m][g_bar_num] = "\x1b[38;2;92;92;92m\x1b[48;2;25;25;25m  \x1b[0m"
+
+        elements = characters_elements[p_index]
+        for el in elements:
+            if el.val == 1:
+                font = el.font_coler
+                num = str(el.num)
+                g_characters_elements_bar[p_index][el.line][g_bar_num] = font + num.rjust(2, " ")[-2:] + '\x1b[0m'
+
+
+
+def bar_flag_detection(p1_elements_data, p2_elements_data):
+
+    for n in p1_elements_data:
+        if n.val == 1:
             return 1
 
-    for element_grain_data in p2_elements_data:
-        if element_grain_data.flag == 1:
+    for n in p2_elements_data:
+        if n.val == 1:
             return 1
 
     return 0
@@ -87,53 +119,18 @@ def bar_ini():
     global g_bar_num
     global g_interval_value
     global g_characters_elements_bar
+    global g_interval_max_flag
 
     g_bar_max_flag = 0
     g_bar_num = 0
-    g_interval_value = 0
+    g_interval_value = 81
+    g_interval_max_flag = 0
 
-    for elements_bar in g_characters_elements_bar:
-        for element_bar in elements_bar:
-            for grain in element_bar:
-                grain = ""
+    g_characters_elements_bar = [[[""] * 80 for i in range(10)] for j in range(4)]
+    circulat_data = [[""] * 10 for i in range(10)]
 
+    return circulat_data
 
-def bar_add(characters_elements_data, stop_flag):
-    global g_characters_elements_bar
-
-    if stop_flag == 0:
-        g_bar_num += 1
-
-    for elements_data, elements_bar in zip(characters_elements_data, g_characters_elements_bar):
-
-        elements_bar[g_bar_num] = create_elements(elements_data)
-
-
-def text_font(rgb):
-    Text_font_str = "\x1b[38;2;" + str(rgb[0]) + ";" + str(rgb[1]) + ";" + str(rgb[2]) + "m"
-    return Text_font_str
-
-
-def bg_font(rgb):
-    bg_font_str = "\x1b[48;2;" + str(rgb[0]) + ";" + str(rgb[1]) + ";" + str(rgb[2]) + "m"
-    return bg_font_str
-
-
-def get_font(text_rgb, bg_rgb):
-    return text_font(text_rgb) + bg_font(bg_rgb)
-
-
-def create_elements(elements_data):
-
-    elements = ["", "", "", "", "", "", "", "", "", ""]
-
-    for element_data in elements_data:
-        if element_data.flag == 1:
-            font = get_font(element_data.font_coler)
-            num = element_data.num
-            elements[element_data.line] = font + num.rjust(2, " ")[-2:]
-
-    return elements
 
 def ex_cmd_enable():
     INVALID_HANDLE_VALUE = -1
