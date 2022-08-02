@@ -1,29 +1,29 @@
 from ctypes import windll, wintypes, byref
 import time
-import cfg_tl
-cfg = cfg_tl
+
+G_BAR_RANGE = 80
+
 g_bar_num = 0
 g_bar_max_flag = 0
 g_interval = 0
 g_interval_value = 81
 g_interval_max_flag = 0
-g_bar_range = 80
-
-g_bars_num = 10
-g_bar_lists = []
-g_font_data_list = [[""] * 10 for i in range(4)]
-# 格納スペース
-g_characters_elements_bar = [[[""] * g_bar_range for i in range(10)] for j in range(4)]
 
 
-def frame_circulation_indicator(characters_elements, stop_flag, circulat_data):
+g_circulat_data = [[""] * 10 for i in range(10)]
+g_characters_elements_bar = [[""] * 10 for i in range(4)]
+
+
+def frame_circulation_indicator(characters_elements, characters_debug_elements, stop_flag):
 
     global g_bar_num
     global g_bar_max_flag
     global g_interval_value
     global g_characters_elements_bar
     global g_interval_max_flag
-    global g_bar_lists
+    global g_circulat_data
+    view_data = ""
+    debug_data = ""
     add_flag = 0
     p1 = characters_elements[0]
     p2 = characters_elements[1]
@@ -35,13 +35,13 @@ def frame_circulation_indicator(characters_elements, stop_flag, circulat_data):
         g_interval_value = 0
 
         if g_interval_max_flag == 1:  # インターバル経過後初期化
-            circulat_data = bar_ini()
+            bar_ini()
 
     elif bar_flag == 0:
         g_interval_value += 1
 
         if g_bar_max_flag == 0:
-            interval = 60
+            interval = 80
 
         elif g_bar_max_flag == 1:
             interval = 20
@@ -56,49 +56,50 @@ def frame_circulation_indicator(characters_elements, stop_flag, circulat_data):
         if stop_flag == 0:
             g_bar_num += 1
 
-            if g_bar_num == g_bar_range:
+            if g_bar_num == G_BAR_RANGE:
                 g_bar_num = 0
                 g_bar_max_flag = 1
 
-        bar_add(characters_elements, stop_flag)
+        bar_add(characters_elements, characters_debug_elements, stop_flag)
 
-        for p_index, p in zip(g_characters_elements_bar, range(4)):
-            for line_index, line in zip(p_index, range(10)):
-                index = g_bar_num + 1
-                circulat_data[p][line] = ""
-                for nnn in range(80):
-                    if index >= 80:
-                        index = 0
-                    circulat_data[p][line] = circulat_data[p][line] + line_index[index]
-                    index += 1
-
-        return circulat_data
+        view_data, debug_data = view_data_cre(g_characters_elements_bar)
 
     elif add_flag == 0:
+        view_data, debug_data = view_data_cre(g_characters_elements_bar)
 
-        return circulat_data
+    return view_data, debug_data
 
 
-def bar_add(characters_elements, stop_flag):
+def bar_add(characters_elements, characters_debug_elements, stop_flag):
 
     global g_characters_elements_bar
     global g_bar_max_flag
-    global g_font_data_list
+    line_num = len(g_characters_elements_bar[0])
 
-    index = 0
-    max_len = len(g_characters_elements_bar[0])
+    for p in range(4):
+        font_list = ["\x1b[38;2;092;092;092m\x1b[48;2;025;025;025m"] * 10
+        num_list = ["  \x1b[0m"] * 10
 
-    for p_index in range(4):
-        for m in range(max_len):
-            g_characters_elements_bar[p_index][m][g_bar_num] = "\x1b[38;2;92;92;92m\x1b[48;2;25;25;25m  \x1b[0m"
-
-        elements = characters_elements[p_index]
-        for el in elements:
+        for el in characters_elements[p]:
             if el.val == 1:
-                font = el.font_coler
-                num = str(el.num)
-                g_characters_elements_bar[p_index][el.line][g_bar_num] = font + num.rjust(2, " ")[-2:] + '\x1b[0m'
+                num_list[el.line] = str(el.num).rjust(2, " ")[-2:] + '\x1b[0m'
+                font_list[el.line] = str(el.font_coler)
 
+        for el in characters_debug_elements[p]:
+            num_list[el.line] = str(el.num).rjust(2, " ")[-2:] + '\x1b[0m'
+            font_list[el.line] = str(el.font_coler)
+
+        for line in range(line_num):
+            if stop_flag == 0:
+                g_characters_elements_bar[p][line] += (font_list[line] + num_list[line])
+
+            elif stop_flag == 1:
+                g_characters_elements_bar[p][line] = g_characters_elements_bar[p][line][0:-44] + (font_list[line] + num_list[line])
+
+            str_len = len(g_characters_elements_bar[p][line])
+
+            if str_len >= 3521:
+                g_characters_elements_bar[p][line] = g_characters_elements_bar[p][line][44:str_len]
 
 
 def bar_flag_detection(p1_elements_data, p2_elements_data):
@@ -120,16 +121,59 @@ def bar_ini():
     global g_interval_value
     global g_characters_elements_bar
     global g_interval_max_flag
+    global g_circulat_data
 
     g_bar_max_flag = 0
     g_bar_num = 0
     g_interval_value = 81
     g_interval_max_flag = 0
 
-    g_characters_elements_bar = [[[""] * 80 for i in range(10)] for j in range(4)]
-    circulat_data = [[""] * 10 for i in range(10)]
+    g_characters_elements_bar = [[""] * 10 for i in range(4)]
+    g_circulat_data = [[""] * 10 for i in range(10)]
 
-    return circulat_data
+
+def view_data_cre(list):
+    bar_p1 = list[0]
+    bar_p2 = list[1]
+    bar_p3 = list[2]
+    bar_p4 = list[3]
+    END = '\x1b[0m\x1b[49m\x1b[K\x1b[1E'
+    state_str = ''
+    state_str += '  |'
+    state_str += '\x1b[4m'
+    state_str += ' 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980' + '\x1b[0m' + END
+    state_str += '1P|' + bar_p1[0] + END
+    state_str += '  |' + bar_p1[1] + END
+
+    state_str += '2P|' + bar_p2[0] + END
+    state_str += '  |' + bar_p2[1] + END
+
+    debug_str = '\x1b[1F'
+    debug_str += '3P|' + bar_p3[0] + END
+    debug_str += '  |' + bar_p3[1] + END
+
+    debug_str += '4P|' + bar_p4[0] + END
+    debug_str += '  |' + bar_p4[1] + END
+
+    debug_str += '1P|' + bar_p1[2] + END
+    debug_str += '1P|' + bar_p1[3] + END
+    debug_str += '1P|' + bar_p1[4] + END
+    debug_str += '1P|' + bar_p1[5] + END
+    debug_str += '1P|' + bar_p1[6] + END
+    debug_str += '1P|' + bar_p1[7] + END
+    debug_str += '1P|' + bar_p1[8] + END
+    debug_str += '1P|' + bar_p1[9] + END
+
+    debug_str += '2P|' + bar_p2[2] + END
+    debug_str += '2P|' + bar_p2[3] + END
+    debug_str += '2P|' + bar_p2[4] + END
+    debug_str += '2P|' + bar_p2[5] + END
+    debug_str += '2P|' + bar_p2[6] + END
+    debug_str += '2P|' + bar_p2[7] + END
+    debug_str += '2P|' + bar_p2[8] + END
+    debug_str += '2P|' + bar_p2[9] + END
+
+    return state_str, debug_str
 
 
 def ex_cmd_enable():
