@@ -137,11 +137,30 @@ def view_data_cre(list):
     bar_p2 = list[1]
     bar_p3 = list[2]
     bar_p4 = list[3]
+
+    font = get_font((255, 255, 255), (255, 0, 0))
+
     END = '\x1b[0m\x1b[49m\x1b[K\x1b[1E'
     state_str = ''
     state_str += '  |'
-    state_str += '\x1b[4m'
-    state_str += ' 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980' + '\x1b[0m' + END
+    under_line = '\x1b[4m'
+    flag = 0
+    for i in range(1, 81):
+        n_1 = str(i).rjust(2, " ")[0:1]
+        n_2 = str(i).rjust(2, " ")[1:2]
+
+        if n_2 != "0":
+            n_1 = " "
+
+            font = get_font((150, 150, 150),  (0, 0, 0))
+        elif n_2 == "0":
+
+            font = get_font((255, 255, 255), (0, 0, 0))
+
+        state_str += under_line + font + n_1 + n_2 + '\x1b[0m'
+
+    state_str += '\x1b[0m' + END
+    # state_str += ' 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980' + '\x1b[0m' + END
     state_str += '1P|' + bar_p1[0] + END
     state_str += '  |' + bar_p1[1] + END
 
@@ -195,3 +214,17 @@ def ex_cmd_enable():
     if windll.kernel32.SetConsoleMode(hOut, dwMode) == 0:
         return False
     return True
+
+
+def text_font(rgb):
+    Text_font_str = "\x1b[38;2;" + str(rgb[0]).rjust(3, "0")[-3:] + ";" + str(rgb[1]).rjust(3, "0")[-3:] + ";" + str(rgb[2]).rjust(3, "0")[-3:] + "m"
+    return Text_font_str
+
+
+def bg_font(rgb):
+    bg_font_str = "\x1b[48;2;" + str(rgb[0]).rjust(3, "0")[-3:] + ";" + str(rgb[1]).rjust(3, "0")[-3:] + ";" + str(rgb[2]).rjust(3, "0")[-3:] + "m"
+    return bg_font_str
+
+
+def get_font(text_rgb, bg_rgb):
+    return text_font(text_rgb) + bg_font(bg_rgb)
