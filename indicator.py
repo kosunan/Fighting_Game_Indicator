@@ -14,7 +14,7 @@ g_circulat_data = [[""] * 10 for i in range(10)]
 g_characters_elements_bar = [[""] * 10 for i in range(4)]
 
 
-def frame_circulation_indicator(characters_elements, characters_debug_elements, stop_flag):
+def frame_circulation_indicator(characters_elements, characters_debug_elements, stop_flag, debug_flag):
 
     global g_bar_num
     global g_bar_max_flag
@@ -60,7 +60,10 @@ def frame_circulation_indicator(characters_elements, characters_debug_elements, 
                 g_bar_num = 0
                 g_bar_max_flag = 1
 
-        bar_add(characters_elements, characters_debug_elements, stop_flag)
+        if debug_flag == 0:
+            characters_debug_elements = []
+
+        bar_add(characters_elements, characters_debug_elements, stop_flag,debug_flag)
 
         view_data, debug_data = view_data_cre(g_characters_elements_bar)
 
@@ -70,7 +73,7 @@ def frame_circulation_indicator(characters_elements, characters_debug_elements, 
     return view_data, debug_data
 
 
-def bar_add(characters_elements, characters_debug_elements, stop_flag):
+def bar_add(characters_elements, characters_debug_elements, stop_flag,debug_flag):
 
     global g_characters_elements_bar
     global g_bar_max_flag
@@ -85,9 +88,10 @@ def bar_add(characters_elements, characters_debug_elements, stop_flag):
                 num_list[el.line] = str(el.num).rjust(2, " ")[-2:] + '\x1b[0m'
                 font_list[el.line] = str(el.font_coler)
 
-        for el in characters_debug_elements[p]:
-            num_list[el.line] = str(el.num).rjust(2, " ")[-2:] + '\x1b[0m'
-            font_list[el.line] = str(el.font_coler)
+        if debug_flag == 1:
+            for el in characters_debug_elements[p]:
+                num_list[el.line] = str(el.num).rjust(2, " ")[-2:] + '\x1b[0m'
+                font_list[el.line] = str(el.font_coler)
 
         for line in range(line_num):
             if stop_flag == 0:
@@ -168,6 +172,7 @@ def view_data_cre(list):
     state_str += '  |' + bar_p2[1] + END
 
     debug_str = '\x1b[1F'
+    debug_str = ''
     debug_str += '3P|' + bar_p3[0] + END
     debug_str += '  |' + bar_p3[1] + END
 
