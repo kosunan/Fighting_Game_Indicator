@@ -53,7 +53,7 @@ def frame_circulation_indicator(characters_elements, characters_debug_elements, 
             add_flag = 1
 
     if add_flag == 1:
-        if stop_flag == 0:
+        if stop_flag <= 1:
             g_bar_num += 1
 
             if g_bar_num == G_BAR_RANGE:
@@ -99,10 +99,10 @@ def bar_add(characters_elements, characters_debug_elements, stop_flag, debug_fla
                 font_list[el.line] = str(el.font_coler)
 
         for line in range(line_num):
-            if stop_flag == 0:
+            if stop_flag <= 1:
                 g_characters_elements_bar[p][line] += (font_list[line] + num_list[line])
 
-            elif stop_flag == 1:
+            elif stop_flag > 1:
                 g_characters_elements_bar[p][line] = g_characters_elements_bar[p][line][0:-44] + (font_list[line] + num_list[line])
 
             str_len = len(g_characters_elements_bar[p][line])
